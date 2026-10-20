@@ -1,0 +1,31 @@
+{
+  "protocol": "CEC2022-official-budget",
+  "dimensions": [
+    20,
+    10
+  ],
+  "functions": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "algorithms": [
+    "eshaguabc_v6"
+  ],
+  "runs": 30,
+  "population_size": 100,
+  "max_fes": {
+    "10": 200000,
+    "20": 1000000
+  },
+  "output_dir": "results/cec2022_she_abc"
+}

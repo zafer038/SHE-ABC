@@ -1,0 +1,60 @@
+{
+  "_note": "Original-paper settings of the competitors; SHE-ABC with the budget-scaled colony. Change values here only, before the runs.",
+  "algorithms": [
+    {
+      "name": "random_search",
+      "kind": "random",
+      "source": "Bergstra & Bengio (2012), JMLR 13:281-305 - uniform sampling, no parameters"
+    },
+    {
+      "name": "abc",
+      "kind": "abc",
+      "population": 25,
+      "params": {
+        "limit_factor": 1.0,
+        "gbest_acceleration": 0.0,
+        "gaussian_scout": false
+      },
+      "source": "Karaboga & Akay (2009), Appl. Math. Comput. 214:108-132 - colony size 50 (SN = 25 food sources), limit = SN*D, random scout"
+    },
+    {
+      "name": "gabc",
+      "kind": "abc",
+      "population": 25,
+      "params": {
+        "limit_factor": 1.0,
+        "gbest_acceleration": 1.5,
+        "gaussian_scout": false
+      },
+      "source": "Zhu & Kwong (2010), Appl. Math. Comput. 217:3166-3173 - C = 1.5; colony size / limit as ABC"
+    },
+    {
+      "name": "de",
+      "kind": "de",
+      "population": "10*D",
+      "params": {
+        "mutation": 0.5,
+        "crossover": 0.9
+      },
+      "source": "Storn & Price (1997), J. Glob. Optim. 11:341-359 - DE/rand/1/bin, NP = 10*D, F = 0.5, CR = 0.9"
+    },
+    {
+      "name": "lshade",
+      "kind": "lshade",
+      "params": {
+        "initial_population_multiplier": 18.0,
+        "minimum_population_size": 4,
+        "memory_size": 6,
+        "archive_rate": 2.6,
+        "p_best_rate": 0.11
+      },
+      "source": "Tanabe & Fukunaga (2014), IEEE CEC - N_init = 18*D, N_min = 4, H = 6, r_arc = 2.6, p = 0.11 (paper values)"
+    },
+    {
+      "name": "eshaguabc_v6",
+      "kind": "eshaguabc_v6",
+      "params": {},
+      "source": "SHE-ABC. Budget-aware colony for HPO: N_init = clip(round(budget/10), 10, 5*D), N_min = max(5, N_init//2); all other parameters as in the CEC experiments"
+    }
+  ]
+}

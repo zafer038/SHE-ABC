@@ -1,0 +1,37 @@
+{
+  "experiment": "finetune",
+  "data_dir": "data/patches",
+  "split": {
+    "tiles": [
+      4,
+      1,
+      1
+    ],
+    "patches_per_tile": 400
+  },
+  "split_seed": 2026,
+  "split_file": "data/split_tile.json",
+  "epochs": 3,
+  "budget": 200,
+  "dry_run_budget": 200,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "test_retrain_seeds": [
+    100,
+    101,
+    102
+  ],
+  "output_dir": "results/finetune",
+  "algorithms_file": "configs/algorithms.json",
+  "_note": "Expensive problem: each evaluation fine-tunes a pretrained U-Net for 'epochs' epochs. Split: whole source tiles (4 train, 1 validation, 1 test). Final test: each run's best setting is retrained with the run seed and with the extra training seeds in test_retrain_seeds."
+}
