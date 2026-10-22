@@ -45,7 +45,7 @@
     "eshaguabc_v5",
     "eshaguabc_v6"
   ],
-  "runs": 3,
+  "runs": 30,
   "seed_runs": 30,
   "population_size": 100,
   "max_fes": {

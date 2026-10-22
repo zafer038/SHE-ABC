@@ -41,7 +41,7 @@ python scripts/complexity.py
 
 Each run is written to `results/<experiment>/D<d>/F<f>/<algorithm>/run_<r>.json` with its seed, the best-so-far
 error at every official checkpoint and a fingerprint of the code, configuration and benchmark files. Runs use the
-official seed rules and 30 runs per function (3 on CEC 2014); finished runs are skipped when a runner is restarted.
+official seed rules and 30 runs per function; finished runs are skipped when a runner is restarted.
 
 ## Hyperparameter optimization (ISPRS Potsdam)
 
