@@ -1,18 +1,3 @@
-"""SHE-ABC v2: v1 with two changes.
-
-A. Operator credit. An operator is rewarded by the rate at which its trials
-   enter the p-best elite (value below the current p_count-th best fitness);
-   v1 rewards the mean fitness gain per use.
-B. Collapse restart. When the colony's mean distance to its centroid falls
-   below ``restart_diversity`` x its initial value and the colony best has not
-   improved at all (beyond floating-point noise, ``restart_rtol`` x |f|) for
-   ``restart_window`` x max_fes evaluations, the
-   whole colony is re-sampled uniformly (the incumbent is not re-inserted; the
-   evaluator keeps the best-so-far) and memory, archive, trial counters and
-   operator probabilities are reset.
-
-Everything else is identical to v1.
-"""
 from collections import deque
 from dataclasses import dataclass
 
@@ -27,7 +12,7 @@ class ESHAGUABC2(ESHAGUABC):
     name: str = 'eshaguabc_v2'
     restart_diversity: float = 1e-3
     restart_window: float = .01
-    restart_rtol: float = 1e-12  # improvements below this relative size are noise
+    restart_rtol: float = 1e-12
 
     def run(self, evaluator, rng, population_size):
         if population_size < 5:
@@ -158,7 +143,6 @@ class ESHAGUABC2(ESHAGUABC):
             if updated:
                 memory_index = (memory_index+1) % self.memory_size
                 updates += 1
-            # (A) credit = elite-entry rate per use.
             rates = elite_entries/np.maximum(uses, 1.)
             if rates.sum() > 0:
                 share = ((1.-self.operator_learning_rate)*share
@@ -186,9 +170,6 @@ class ESHAGUABC2(ESHAGUABC):
                     if i != elite or value[0] < fit[i]:
                         pop[i], fit[i] = trial, value[0]
                         scouts += 1
-            # (B) collapse restart.
-            # Only a change beyond floating-point level (restart_rtol x |f|) counts as
-            # improvement, so runs converging slowly near the optimum are not restarted.
             if fit.min() < window_best-self.restart_rtol*max(1., abs(window_best)):
                 window_best, window_start = float(fit.min()), evaluator.evaluations
             diversity = float(np.mean(np.linalg.norm(pop-pop.mean(axis=0), axis=1)))
@@ -197,7 +178,7 @@ class ESHAGUABC2(ESHAGUABC):
                 restart_fes.append(evaluator.evaluations)
                 new_pop, new_fit = _initial_population(evaluator, rng, n, d)
                 if len(new_fit) < n:
-                    break  # budget or target reached during re-sampling
+                    break
                 pop, fit = new_pop, new_fit
                 trials, mf, mcr, memory_index, archive, share, probabilities = fresh_state()
                 window_best, window_start = float(fit.min()), evaluator.evaluations

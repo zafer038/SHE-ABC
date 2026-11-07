@@ -1,6 +1,3 @@
-"""CEC 2014 bound-constrained suite through the official C code (external/cec2014/cec14.dll, built from
-cec14_test_func.cpp of https://github.com/P-N-Suganthan/CEC2014, cec14-c-code.zip). The official code reads its
-data from input_data/ relative to the working directory, so the process changes into external/cec2014 once."""
 from __future__ import annotations
 
 import ctypes

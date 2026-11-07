@@ -1,12 +1,3 @@
-"""Validate the CEC 2017 port.
-
-1. Optimum: F(o) - F* for every function / dimension.
-2. Basic functions against the organisers' CEC 2022 Python code (same C lineage),
-   fed with CEC 2017 shift/rotation data.
-3. Hybrid / composition functions against an independent loop-by-loop
-   transcription of the C code built on those official basic functions
-   (weierstrass and bi_rastrigin, absent from CEC 2022, transcribed literally).
-"""
 import importlib.util, math, sys, warnings
 from pathlib import Path
 import numpy as np
@@ -16,13 +7,12 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "external" / "cec2017" / "input_data"
 CEC22 = ROOT / "external" / "cec2022-python" / "Python" / "CEC2022.py"
 sys.path.insert(0, str(ROOT / "src"))
-from guabc.cec2017 import CEC2017Function, FUNCTIONS, BIAS  # noqa: E402
+from guabc.cec2017 import CEC2017Function, FUNCTIONS, BIAS
 
 spec = importlib.util.spec_from_file_location("cec22", CEC22)
 m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
 PI, INF = m.PI, m.INF
 
-# ---------- literal transcriptions of the two functions CEC 2022 lacks ----------
 def weierstrass_ref(x, nx, Os, Mr, s, r):
     z = m.sr_func(x, nx, Os, Mr, 0.5/100.0, s, r)
     f = 0.0
@@ -66,7 +56,6 @@ REF["bi_rastrigin"] = bi_rastrigin_ref
 
 
 def levy_ref(x, nx, Os, Mr, s, r):
-    # CEC 2022 changed w = 1 + (z-1)/4 to 1 + z/4; CEC 2017's C code keeps (z-1).
     z = m.sr_func(x, nx, Os, Mr, 1.0, s, r)
     w = [1.0 + (z[i] - 1.0)/4.0 for i in range(nx)]
     t1 = math.pow(math.sin(PI*w[0]), 2)
@@ -78,7 +67,6 @@ REF["levy"] = levy_ref
 
 
 def optimum(fn):
-    """F9's minimum is where z = 1 (C code's w uses z-1), elsewhere at the shift."""
     d = fn.dimension
     if fn.function_number == 9:
         return fn.Os[:d] + np.linalg.solve(fn.M[:d*d].reshape(d, d), np.ones(d))
@@ -100,7 +88,7 @@ def hybrid_ref(k, x, nx, Os, Mr2, S, s, r):
     for i in range(nx): m.y[i] = z[S[i] - 1]
     f = 0.0
     for i, name in enumerate(names):
-        seg = m.y[g[i]:g[i] + g_nx[i]]          # C passes &y[G]; segment read before the call
+        seg = m.y[g[i]:g[i] + g_nx[i]]
         f += REF[name](seg, g_nx[i], Os, Mr2, 0, 0)
     return f
 

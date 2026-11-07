@@ -1,18 +1,3 @@
-"""SHE-ABC v1: artificial bee colony with an adaptive operator ensemble.
-
-Employed, onlooker and scout phases as in ABC. Every bee draws one of three
-proposal operators from an adaptive pool:
-
-  0 'pbest'  current-to-pbest/1 with external archive (as in SHADE)
-  1 'rand'   current-to-rand/1 (rotation-invariant, no crossover)
-  2 'guabc'  ABC single-axis step with global-best guidance (the ABC move)
-
-With probability ``p_eig`` a bee works in the eigenvector basis of the
-covariance of the best ``eig_top_rate`` share of the colony: operator 0 does
-its binomial crossover there, operator 2 steps along one eigen-axis. Scouts
-sample an ellipsoid aligned with the same basis. F/CR use SHADE's
-success-history memory. Proposals use L-SHADE midpoint repair; scouts clip.
-"""
 from collections import deque
 from dataclasses import dataclass
 
@@ -40,7 +25,6 @@ class ESHAGUABC:
     operator_learning_rate: float = .5
 
     def _basis(self, pop, fit):
-        """Eigen-decomposition of the elite covariance (ascending eigenvalues)."""
         d = pop.shape[1]
         top = np.argsort(fit)[:max(2, int(round(self.eig_top_rate*len(pop))))]
         cov = np.atleast_2d(np.cov(pop[top].T)) + 1e-12*np.eye(d)
@@ -131,13 +115,12 @@ class ESHAGUABC:
                         mask = rng.random(d) < cr
                         mask[int(rng.integers(d))] = True
                         if use_eig:
-                            # Crossover on eigen-coordinates, then rotate back.
                             rotated = np.where(mask, mutant@basis, parent@basis)
                             trial = rotated@basis.T
                         else:
                             trial = np.where(mask, mutant, parent)
                     elif op == 1:
-                        use_eig = False  # current-to-rand/1 is rotation-invariant
+                        use_eig = False
                         slot = int(rng.integers(self.memory_size))
                         f = self._sample_f(rng, mf, slot)
                         r1 = self._other(rng, n, i)
@@ -151,7 +134,6 @@ class ESHAGUABC:
                         psi = rng.uniform(0., self.gbest_acceleration)
                         step = phi*(parent-pop[k]) + psi*(best-parent)
                         if use_eig:
-                            # Single-axis move along eigenvector j (x' = xB).
                             axis = basis[:, j]
                             trial = parent + float(step@axis)*axis
                         else:
@@ -183,7 +165,7 @@ class ESHAGUABC:
                         pop[i], fit[i], trials[i] = trial, value[0], 0
                     else:
                         if gain == 0:
-                            pop[i] = trial  # neutral move across plateaus
+                            pop[i] = trial
                         trials[i] += 1
             updated = False
             if success_f:
@@ -211,8 +193,6 @@ class ESHAGUABC:
                 sigma = self.sigma_min+(self.sigma_max-self.sigma_min)*np.exp(-self.decay*progress)
                 eigenvalues, basis, eig_ok = self._basis(pop, fit)
                 mean = eigenvalues.mean()
-                # Ellipsoid shape blended 50/50 with isotropic noise; the mean
-                # per-axis variance stays 1.
                 scale = np.sqrt((eigenvalues/mean+1.)/2.) if eig_ok and mean > 0 else np.ones(d)
                 for i in exhausted:
                     if evaluator.done:
@@ -224,7 +204,6 @@ class ESHAGUABC:
                     if not len(value):
                         break
                     trials[i] = 0
-                    # The colony's current best is only replaced by a better scout.
                     if i != elite or value[0] < fit[i]:
                         pop[i], fit[i] = trial, value[0]
                         scouts += 1

@@ -1,22 +1,3 @@
-"""CEC 2017 bound-constrained suite: faithful NumPy port of the official C code.
-
-Source: cec17_test_func.cpp (Noor Awad, CEC17 package from
-https://github.com/P-N-Suganthan/CEC2017-BoundContrained, CEC17_fast_pow-C++.zip).
-
-The official code keeps work vectors ``y`` and ``z`` as globals and passes
-pointers into ``y`` to the hybrid sub-functions. Several published quirks
-depend on that and are reproduced here on purpose:
-- schaffer_F7_func reads the global ``y`` (shifted, not rotated), and inside
-  hybrid functions it reads the first entries of ``y`` rather than its own
-  segment;
-- step_rastrigin_func rounds the stale ``y`` before sr_func overwrites it, so
-  F8 evaluates as plain Rastrigin;
-- bi_rastrigin_func inside hybrids overwrites the head of ``y`` and uses the
-  signs of the first entries of the full shift vector;
-- levy_func uses sin(pi*w + 1);
-- F20 loads ten shifts/matrices like a composition function but uses the first.
-Loops are vectorised; summation order may differ from C in the last bits.
-"""
 from __future__ import annotations
 
 import math
@@ -28,7 +9,7 @@ INF = 1.0e99
 E = 2.7182818284590452353602874713526625
 PI = 3.1415926535897932384626433832795029
 CF_NUM = 10
-FUNCTIONS = tuple(f for f in range(1, 31) if f != 2)  # F2 was excluded by the organisers
+FUNCTIONS = tuple(f for f in range(1, 31) if f != 2)
 DIMENSIONS = (10, 30, 50, 100)
 BIAS = {f: 100.0*f for f in range(1, 31)}
 CHECKPOINT_FRACTIONS = (0.01, 0.02, 0.03, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0)
@@ -39,7 +20,6 @@ def data_dir() -> Path:
 
 
 def official_checkpoints(dimension: int, max_fes: int) -> list[int]:
-    """FE checkpoints of the CEC 2017 report (14 fractions of MaxFES)."""
     return [max(1, min(max_fes, int(round(c*max_fes)))) for c in CHECKPOINT_FRACTIONS]
 
 
@@ -48,7 +28,6 @@ def max_fes(dimension: int) -> int:
 
 
 def official_run_seed(dimension: int, function_number: int, run: int, runs: int = 30) -> int:
-    """CEC 2017 has no seed file; reuse the CEC 2022 Rand_Seeds.txt and its index rule."""
     if dimension not in DIMENSIONS:
         raise ValueError("Supported dimensions: 10, 30, 50, 100")
     if not 0 <= run < runs:
@@ -78,7 +57,6 @@ class CEC2017Function:
             self.M = m[:nx*nx].copy()
             self.Os = _numbers(d / f"shift_data_{f}.txt")[:nx].copy()
         else:
-            # C reads cf_num*nx*nx values (F20's file holds one matrix; only that is used).
             self.M = m[:CF_NUM*nx*nx].copy()
             rows = [line.split() for line in (d / f"shift_data_{f}.txt").read_text().splitlines() if line.strip()]
             self.Os = np.array([float(v) for row in rows[:CF_NUM] for v in row[:nx]])
@@ -87,12 +65,10 @@ class CEC2017Function:
             self.SS = _numbers(d / f"shuffle_data_{f}_D{nx}.txt", dtype=float).astype(int)[:nx]
         elif f in (29, 30):
             self.SS = _numbers(d / f"shuffle_data_{f}_D{nx}.txt", dtype=float).astype(int)[:nx*CF_NUM]
-        self.y = np.zeros(nx)  # the C globals
+        self.y = np.zeros(nx)
         self.z = np.zeros(nx)
 
-    # ----- shift / rotate ------------------------------------------------
     def _sr(self, x, nx, Os, Mr, rate, s_flag, r_flag):
-        """sr_func: returns a fresh z (length nx); updates the global y like C."""
         y = self.y
         if s_flag == 1:
             if r_flag == 1:
@@ -105,7 +81,6 @@ class CEC2017Function:
             return Mr[:nx*nx].reshape(nx, nx) @ y[:nx]
         return x[:nx]*rate
 
-    # ----- basic functions ----------------------------------------------
     def ellips(self, x, nx, Os, Mr, s, r):
         z = self._sr(x, nx, Os, Mr, 1.0, s, r)
         i = np.arange(nx)
@@ -127,7 +102,7 @@ class CEC2017Function:
 
     def schaffer_F7(self, x, nx, Os, Mr, s, r):
         self._sr(x, nx, Os, Mr, 1.0, s, r)
-        y = self.y[:nx]  # official code uses y, not z
+        y = self.y[:nx]
         zz = np.power(y[:-1]*y[:-1] + y[1:]*y[1:], 0.5)
         tmp = np.sin(50.0*np.power(zz, 0.2))
         f = float(np.sum(np.power(zz, 0.5) + np.power(zz, 0.5)*tmp*tmp))
@@ -159,8 +134,6 @@ class CEC2017Function:
         return float(np.sum(z*z - 10.0*np.cos(2.0*PI*z) + 10.0))
 
     def step_rastrigin(self, x, nx, Os, Mr, s, r):
-        # The C code rounds the stale global y here; sr_func then overwrites y
-        # completely, so the rounding never reaches the result.
         return self.rastrigin(x, nx, Os, Mr, s, r)
 
     def schwefel(self, x, nx, Os, Mr, s, r):
@@ -193,7 +166,7 @@ class CEC2017Function:
         if s == 1:
             y[:nx] = x[:nx] - Os[:nx]
         else:
-            y[:nx] = x[:nx]  # may alias y[G:G+nx] inside hybrids, as in C
+            y[:nx] = x[:nx]
         y[:nx] *= 10.0/100.0
         tmpx = 2*y[:nx]
         tmpx[Os[:nx] < 0.0] *= -1.0
@@ -211,7 +184,7 @@ class CEC2017Function:
     def grie_rosen(self, x, nx, Os, Mr, s, r):
         z = self._sr(x, nx, Os, Mr, 5.0/100.0, s, r) + 1.0
         a = z
-        b = np.roll(z, -1)  # pairs (i, i+1) and the wrap (nx-1, 0)
+        b = np.roll(z, -1)
         t1 = a*a - b
         t2 = a - 1.0
         temp = 100.0*t1*t1 + t2*t2
@@ -250,7 +223,6 @@ class CEC2017Function:
         wi = w[:-1]
         return term1 + float(np.sum((wi - 1)**2*(1 + 10*np.sin(PI*wi + 1)**2))) + term3
 
-    # ----- hybrid functions ---------------------------------------------
     _HYBRID = {
         1: ((0.2, 0.4, 0.4), ("zakharov", "rosenbrock", "rastrigin")),
         2: ((0.3, 0.3, 0.4), ("ellips", "schwefel", "bent_cigar")),
@@ -277,7 +249,6 @@ class CEC2017Function:
             fit += getattr(self, name)(self.y[g[i]:g[i] + g_nx[i]], g_nx[i], Os, Mr, 0, 0)
         return fit
 
-    # ----- composition functions ----------------------------------------
     @staticmethod
     def cf_cal(x, nx, Os, delta, bias, fit):
         cf = len(fit)
@@ -293,7 +264,6 @@ class CEC2017Function:
             w_sum = float(np.sum(w))
         return float(np.sum(w/w_sum*np.asarray(fit)))
 
-    # (components, scale factors, delta, bias); scale (a, b) means fit = a*fit/b
     _COMPOSITION = {
         1: (("rosenbrock", "ellips", "rastrigin"), (None, (10000, 1e10), None), (10, 20, 30), (0, 100, 200)),
         2: (("rastrigin", "griewank", "schwefel"), (None, (1000, 100), None), (10, 20, 30), (0, 100, 200)),
@@ -333,7 +303,6 @@ class CEC2017Function:
             fit.append(v)
         return self.cf_cal(x, nx, self.Os, delta, bias, fit)
 
-    # ----- dispatch ------------------------------------------------------
     _BASIC = {1: "bent_cigar", 3: "zakharov", 4: "rosenbrock", 5: "rastrigin", 6: "schaffer_F7",
               7: "bi_rastrigin", 8: "step_rastrigin", 9: "levy", 10: "schwefel"}
 

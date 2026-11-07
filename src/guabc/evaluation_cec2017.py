@@ -1,4 +1,3 @@
-"""Budgeted evaluator with the CEC 2017 checkpoints (14 fractions of MaxFES)."""
 from __future__ import annotations
 
 from dataclasses import dataclass

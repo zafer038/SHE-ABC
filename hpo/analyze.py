@@ -1,8 +1,3 @@
-"""Summarise an HPO comparison: test/val mIoU per algorithm, paired tests vs SHE-ABC (eshaguabc_v6),
-Friedman ranks and anytime curves.
-
-    python -m hpo.analyze --results results/finetune
-"""
 from __future__ import annotations
 
 import argparse
@@ -24,7 +19,6 @@ def main():
     if final.exists():
         ft = json.loads(final.read_text(encoding="utf-8"))
         tests = {(x["algorithm"], x["seed"]): x["test"]["miou"] for x in ft["runs"]}
-        # mean test mIoU over the run seed and the extra training seeds (fine-tuning only)
         tests_all = {(x["algorithm"], x["seed"]): float(np.mean([x["test"]["miou"]] + [y["test"]["miou"] for y in x["retrain"]]))
                      for x in ft["runs"] if x.get("retrain")}
         if ft.get("reproducibility_val_abs_diff"):
@@ -70,13 +64,12 @@ def main():
             mins = np.mean([runs[a][s]["minutes"] for s in seeds])
             tcol = f"{t.mean():10.4f} ± {t.std(ddof=1) if len(t) > 1 else 0:.4f}" if np.all(np.isfinite(t)) else f"{'-':>19s}"
             print(f"{a:16s} {tcol}   {v.mean():12.4f} {mins:8.1f}   {cmp}")
-        mat = np.array([table[a] for a in algos]).T  # seeds x algorithms, higher is better
+        mat = np.array([table[a] for a in algos]).T
         if len(seeds) >= 2 and np.all(np.isfinite(mat)):
             ranks = np.array([rankdata(-row) for row in mat]).mean(0)
             print("\nFriedman mean rank (1 = best): " + ", ".join(f"{a} {r:.2f}" for a, r in sorted(zip(algos, ranks), key=lambda z: z[1])))
             if len(algos) >= 3:
                 print(f"Friedman test p = {friedmanchisquare(*mat.T).pvalue:.3g}")
-    # anytime curves: median best-so-far validation mIoU vs evaluations
     curves = {a: np.median(np.array([runs[a][s]["curve"] for s in seeds]), axis=0) for a in algos}
     n = min(len(c) for c in curves.values())
     marks = sorted(set(int(round(f*n)) for f in (0.1, 0.25, 0.5, 0.75, 1.0)))

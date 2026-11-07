@@ -1,16 +1,3 @@
-"""Algorithm complexity of eshaguabc_v6 by the CEC procedure (T0, T1, T2), single process.
-
-    python scripts/complexity.py            -> results/complexity_eshaguabc_v6.json
-
-T0  : time of the CEC test loop (10^6 iterations of the prescribed arithmetic).
-T1  : time of 200 000 evaluations of the test function alone (one point per call,
-      the way the algorithm calls it).
-T2  : time of eshaguabc_v6 using 200 000 evaluations on the same function (early
-      stopping off), mean of 5 runs = T^2.
-Reported: T0, T1, T^2 and (T^2 - T1)/T0.
-CEC 2017 prescribes F18. For CEC 2022 both F1 and F7 are measured; use the one the
-CEC 2022 technical report prescribes. Run on an otherwise idle machine.
-"""
 from __future__ import annotations
 
 import json
@@ -24,10 +11,10 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from guabc import cec2017, cec2022  # noqa: E402
-from guabc.evaluation import BudgetedEvaluator  # noqa: E402
-from guabc.evaluation_cec2017 import BudgetedEvaluator2017  # noqa: E402
-from guabc.optimizers import OPTIMIZERS  # noqa: E402
+from guabc import cec2017, cec2022
+from guabc.evaluation import BudgetedEvaluator
+from guabc.evaluation_cec2017 import BudgetedEvaluator2017
+from guabc.optimizers import OPTIMIZERS
 
 EVALS, REPEATS, ALGORITHM = 200_000, 5, "eshaguabc_v6"
 
@@ -54,7 +41,7 @@ def measure(suite, function, dimension):
     t2 = []
     for r in range(REPEATS):
         evaluator = evaluator_cls(objective=objective, dimension=dimension, max_fes=EVALS,
-                                  optimum=bias[function], target_error=-1.)  # no early stop
+                                  optimum=bias[function], target_error=-1.)
         started = time.perf_counter()
         OPTIMIZERS[ALGORITHM].run(evaluator, np.random.Generator(np.random.MT19937(r)), 100)
         t2.append(time.perf_counter() - started)

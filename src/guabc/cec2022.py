@@ -56,13 +56,11 @@ def _load_official_module():
 
 
 def official_checkpoints(dimension: int, max_fes: int) -> list[int]:
-    """Return the 16 FE checkpoints defined in the CEC 2022 report."""
     points = [math.floor(dimension ** (k / 5.0 - 3.0) * max_fes) for k in range(16)]
     return [max(1, min(max_fes, value)) for value in points]
 
 
 def official_run_seed(dimension: int, function_number: int, run: int) -> int:
-    """Return the report-prescribed seed (``run`` is zero based)."""
     if dimension not in (10, 20):
         raise ValueError("Official seeds are defined here only for D=10 and D=20")
     runs = 30
@@ -75,7 +73,6 @@ def official_run_seed(dimension: int, function_number: int, run: int) -> int:
 
 
 class CEC2022Function:
-    """Thin adapter around the unmodified official Python implementation."""
 
     def __init__(self, function_number: int, dimension: int):
         if function_number not in BIAS:
@@ -105,9 +102,6 @@ class CEC2022Function:
     def _evaluate_one(self, point: np.ndarray) -> float:
         m = self._module
         d = self.dimension
-        # Several functions in the official translation use these work arrays
-        # as module globals. Resetting them reproduces cec22_test_func without
-        # re-reading the immutable data files for every FE.
         m.y = [0.0] * d
         m.z = [None] * d
         args = (point, d, self._shift, self._matrix)
@@ -134,16 +128,11 @@ class CEC2022Function:
         if x.ndim != 2 or x.shape[1] != self.dimension:
             raise ValueError(f"Expected shape (n, {self.dimension}), received {x.shape}")
 
-        # The official functions called by _evaluate_one use module globals, so
-        # access is serialized. They read no files (only cec22_test_func does,
-        # see legacy_call), so no chdir is needed: chdir on every evaluation made
-        # parallel workers contend in the file system and ran ~20x slower.
         with _LOCK:
             raw = np.array([self._evaluate_one(point) for point in x], dtype=float)
         return np.asarray(raw, dtype=float)
 
     def legacy_call(self, points: np.ndarray) -> np.ndarray:
-        """Slow official entry point, retained only for parity tests."""
         x = np.asarray(points, dtype=float)
         if x.ndim == 1:
             x = x[None, :]

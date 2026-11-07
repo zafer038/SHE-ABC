@@ -1,5 +1,3 @@
-// Evaluates the official CEC 2017 function on points read from a binary file.
-// usage: cec17.exe func nx mx points.bin values.bin   (run with input_data/ in the working directory)
 #include <stdio.h>
 #include <stdlib.h>
 double *OShift, *M, *y, *z, *x_bound;

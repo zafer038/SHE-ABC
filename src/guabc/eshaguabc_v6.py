@@ -1,10 +1,3 @@
-"""SHE-ABC (v6, the final algorithm): v5 with a linear population reduction.
-
-N = max(100, 5*D) for the first half of the budget, then reduced linearly to
-100, removing the worst bees; limit, p-best count and archive capacity follow
-the current size. At D10 N stays 100, so v6 equals v4 there. The generation
-loop below is a verbatim copy of eshaguabc_v2.run plus the marked (v6) block.
-"""
 from collections import deque
 from dataclasses import dataclass
 
@@ -27,7 +20,7 @@ class ESHAGUABC6(ESHAGUABC4):
         if len(OPERATORS)*self.p_min >= 1.:
             raise ValueError('p_min too large for the operator pool')
         d = evaluator.dimension
-        n_min = int(population_size)  # never below the v4 colony
+        n_min = int(population_size)
         n_init = max(n_min, int(round(self.population_per_dim*d)))
         pop, fit = _initial_population(evaluator, rng, n_init, d)
         n = len(pop)
@@ -153,7 +146,6 @@ class ESHAGUABC6(ESHAGUABC4):
             if updated:
                 memory_index = (memory_index+1) % self.memory_size
                 updates += 1
-            # (A) credit = elite-entry rate per use.
             rates = elite_entries/np.maximum(uses, 1.)
             if rates.sum() > 0:
                 share = ((1.-self.operator_learning_rate)*share
@@ -181,9 +173,6 @@ class ESHAGUABC6(ESHAGUABC4):
                     if i != elite or value[0] < fit[i]:
                         pop[i], fit[i] = trial, value[0]
                         scouts += 1
-            # (B) collapse restart.
-            # Only a change beyond floating-point level (restart_rtol x |f|) counts as
-            # improvement, so runs converging slowly near the optimum are not restarted.
             if fit.min() < window_best-self.restart_rtol*max(1., abs(window_best)):
                 window_best, window_start = float(fit.min()), evaluator.evaluations
             diversity = float(np.mean(np.linalg.norm(pop-pop.mean(axis=0), axis=1)))
@@ -192,12 +181,10 @@ class ESHAGUABC6(ESHAGUABC4):
                 restart_fes.append(evaluator.evaluations)
                 new_pop, new_fit = _initial_population(evaluator, rng, n, d)
                 if len(new_fit) < n:
-                    break  # budget or target reached during re-sampling
+                    break
                 pop, fit = new_pop, new_fit
                 trials, mf, mcr, memory_index, archive, share, probabilities = fresh_state()
                 window_best, window_start = float(fit.min()), evaluator.evaluations
-            # (v6) keep n_init for the first half of the budget, then shrink linearly
-            # to n_min; the worst bees leave, as in L-SHADE's population reduction.
             progress = evaluator.evaluations/evaluator.max_fes
             if not evaluator.done and n > n_min and progress > self.reduction_start:
                 frac = (progress-self.reduction_start)/(1.-self.reduction_start)

@@ -1,4 +1,3 @@
-"""Potsdam patches: RGB images + colour-coded labels -> class ids; fixed tile-level split."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -6,7 +5,6 @@ from pathlib import Path
 import numpy as np
 
 CLASSES = ["impervious_surfaces", "building", "low_vegetation", "tree", "car", "clutter"]
-# ISPRS Potsdam colour code
 COLOURS = {(255, 255, 255): 0, (0, 0, 255): 1, (0, 255, 255): 2, (0, 255, 0): 3, (255, 255, 0): 4, (255, 0, 0): 5}
 IGNORE = 255
 
@@ -54,13 +52,10 @@ def split(n: int, fractions=(0.70, 0.15, 0.15), seed: int = 2026):
 
 
 def tile_of(name: str, patches_per_tile: int = 400) -> int:
-    """Source tile of a patch: Image_k comes from tile k // 400 (6 tiles x 20 x 20 patches, raster order)."""
     return int(name.split("_")[1])//patches_per_tile
 
 
 def tile_split(names, tiles=(4, 1, 1), seed: int = 2026, patches_per_tile: int = 400):
-    """Whole tiles go to one subset: a seeded permutation of the tile ids gives the test tiles first,
-    then the validation tiles, and the rest train. Returns patch indices and the tile ids per subset."""
     tile = np.array([tile_of(n, patches_per_tile) for n in names])
     ids = np.unique(tile)
     if len(ids) != sum(tiles):

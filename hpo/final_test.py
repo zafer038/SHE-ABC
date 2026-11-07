@@ -1,33 +1,21 @@
-"""One-time test-set evaluation, run once after ALL HPO runs of an experiment are finished.
-
-    python -m hpo.final_test --config configs/hpo_finetune.json
-    python -m hpo.final_test --config configs/hpo_postproc.json
-
-- Refuses to start unless every (algorithm, seed) run exists and matches the experiment fingerprint.
-- Refuses to run a second time (results/<exp>/final_test.json exists), so the test set is used once.
-- Fine-tuning: each run's best setting is retrained with the run's seed; the validation mIoU is
-  re-measured too, and its difference to the stored value is reported (run-to-run reproducibility).
-  The setting is also retrained with each training seed in test_retrain_seeds (config), and the
-  validation and test mIoU of these models are stored as well (sensitivity to the training seed).
-"""
 from __future__ import annotations
 
 import os
 
 os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
 
-import argparse  # noqa: E402
-import json  # noqa: E402
-import sys  # noqa: E402
-import time  # noqa: E402
-from pathlib import Path  # noqa: E402
+import argparse
+import json
+import sys
+import time
+from pathlib import Path
 
-import numpy as np  # noqa: E402
+import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from hpo.common import DECODERS  # noqa: E402
-from hpo.run_hpo import atomic_write, data_digest, experiment_fingerprint, get_split, load_algorithms  # noqa: E402
+from hpo.common import DECODERS
+from hpo.run_hpo import atomic_write, data_digest, experiment_fingerprint, get_split, load_algorithms
 
 
 def main():

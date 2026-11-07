@@ -1,9 +1,3 @@
-"""SHE-ABC v3 (a side branch of v2): v2 with one change.
-
-The eigen basis is estimated from max(eig_top_rate x N, eig_min_per_dim x D)
-elites instead of eig_top_rate x N. With N = 100 this is 30 elites at D = 10
-(identical to v2) and 40 at D = 20.
-"""
 from dataclasses import dataclass
 
 import numpy as np
@@ -17,7 +11,6 @@ class ESHAGUABC3(ESHAGUABC2):
     eig_min_per_dim: float = 2.
 
     def _basis(self, pop, fit):
-        """Eigen-decomposition of the elite covariance (ascending eigenvalues)."""
         d = pop.shape[1]
         count = min(len(pop), max(2, int(round(self.eig_top_rate*len(pop))),
                                   int(round(self.eig_min_per_dim*d))))

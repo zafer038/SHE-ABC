@@ -1,24 +1,13 @@
-"""Measure fine-tuning evaluations on this GPU: time per evaluation, total run-time estimate and the
-evaluation noise floor.
-
-    python -m hpo.benchmark
-
-Noise floor:
-- same seed, same hyperparameters, 3 repeats -> residual non-determinism of the GPU (ideally 0)
-- same hyperparameters, seeds 0/1/2          -> seed-to-seed spread of a single evaluation
-Validation mIoU differences between HPO results smaller than these are not meaningful.
-Uses (and creates on first call) the same data/split.json as the HPO runs; never touches the test set.
-"""
 from __future__ import annotations
 
 import os
 
 os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
 
-import json  # noqa: E402
-import sys  # noqa: E402
-import time  # noqa: E402
-from pathlib import Path  # noqa: E402
+import json
+import sys
+import time
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -61,11 +50,11 @@ def main():
         dt, inf = run(mid, s)
         times.append(dt); seeds.append(inf["miou"])
         print(f"  seed {s}: {dt:.1f}s  val mIoU={inf['miou']:.5f}")
-    for x in (np.full(6, 50.0), np.full(6, -50.0)):  # larger / smaller batch configurations
+    for x in (np.full(6, 50.0), np.full(6, -50.0)):
         dt, inf = run(x, 0)
         times.append(dt)
         print(f"  batch={inf['hp']['batch_size']:2d}: {dt:.1f}s  val mIoU={inf['miou']:.4f}")
-    per_eval = float(np.mean(times[1:]))  # first call includes CUDA/cuDNN warm-up
+    per_eval = float(np.mean(times[1:]))
     n_runs = len(algos)*len(cfg["seeds"])
     total_h = n_runs*cfg["budget"]*per_eval/3600
     print(f"\nnoise floor: same-seed range {max(same) - min(same):.5f} "

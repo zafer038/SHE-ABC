@@ -121,7 +121,6 @@ class DifferentialEvolution:
 
 @dataclass
 class LinearSuccessHistoryDE:
-    """L-SHADE 1.0.1 translated from Tanabe and Fukunaga's fixed source."""
 
     name: str = "lshade"
     initial_population_multiplier: float = 18.0
@@ -274,33 +273,31 @@ OPTIMIZERS = {
     "lshade": LinearSuccessHistoryDE(),
 }
 
-# SHE-ABC (eshaguabc_v6) and its development versions v1-v5 import LOWER/UPPER/_initial_population
-# from this module, so they are registered after they are defined.
-from .eshaguabc import ESHAGUABC  # noqa: E402
+from .eshaguabc import ESHAGUABC
 
 OPTIMIZERS["eshaguabc_v1"] = ESHAGUABC()
 
-from .eshaguabc_v2 import ESHAGUABC2  # noqa: E402
+from .eshaguabc_v2 import ESHAGUABC2
 
 OPTIMIZERS["eshaguabc_v2"] = ESHAGUABC2()
 
-from .eshaguabc_v3 import ESHAGUABC3  # noqa: E402
+from .eshaguabc_v3 import ESHAGUABC3
 
 OPTIMIZERS["eshaguabc_v3"] = ESHAGUABC3()
 
-from .eshaguabc_v4 import ESHAGUABC4  # noqa: E402
+from .eshaguabc_v4 import ESHAGUABC4
 
 OPTIMIZERS["eshaguabc_v4"] = ESHAGUABC4()
 
-from .eshaguabc_v5 import ESHAGUABC5  # noqa: E402
+from .eshaguabc_v5 import ESHAGUABC5
 
 OPTIMIZERS["eshaguabc_v5"] = ESHAGUABC5()
 
-from .eshaguabc_v6 import ESHAGUABC6  # noqa: E402
+from .eshaguabc_v6 import ESHAGUABC6
 
 OPTIMIZERS["eshaguabc_v6"] = ESHAGUABC6()
 
-from .eshaguabc_v6_ablation import ABLATIONS  # noqa: E402
+from .eshaguabc_v6_ablation import ABLATIONS
 
 for _cls in ABLATIONS:
     OPTIMIZERS[_cls.name] = _cls()

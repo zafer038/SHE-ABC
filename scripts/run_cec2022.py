@@ -20,15 +20,12 @@ sys.path.insert(0, str(ROOT / "src"))
 from guabc.cec2022 import BIAS, CEC2022Function, official_run_seed
 from guabc.evaluation import BudgetedEvaluator
 from guabc.optimizers import OPTIMIZERS
-# eshaguabc_v1..v6 are registered inside guabc.optimizers.
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--workers", type=int, default=None)
-    # Task order only; results are unaffected. Lets two machines share one
-    # package from opposite ends without running the same task twice.
     parser.add_argument("--reverse", action="store_true")
     return parser.parse_args()
 

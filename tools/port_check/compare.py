@@ -1,9 +1,3 @@
-"""Point-by-point comparison of the NumPy CEC 2017 port with the official C code (compiled cec17.exe).
-
-For every function (F2 excluded) and D = 10, 30, 50, 100: 1000 uniform random points in [-100, 100]^D, 200 boundary
-points (100 corners, 100 points with a random half of the coordinates at a bound) and 16 special points (the shift
-vector o, o +- 1e-8, o + 1e-3 N(0, I) x5, o + N(0, I) x5, the origin, +100 and -100 everywhere).
-Writes port_validation.csv (one row per function and dimension) and prints the overall maxima."""
 import csv
 import subprocess
 import sys
@@ -13,9 +7,9 @@ from pathlib import Path
 
 import numpy as np
 
-PKG = Path(__file__).resolve().parents[2]  # repository root
+PKG = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PKG / "src"))
-from guabc.cec2017 import CEC2017Function, FUNCTIONS, DIMENSIONS  # noqa: E402
+from guabc.cec2017 import CEC2017Function, FUNCTIONS, DIMENSIONS
 
 HERE = Path(__file__).parent
 EXE = HERE / "cec17.exe"

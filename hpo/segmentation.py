@@ -1,4 +1,3 @@
-"""U-Net (ImageNet-pretrained ResNet18 encoder) fine-tuning and evaluation on GPU."""
 from __future__ import annotations
 
 import math
@@ -14,9 +13,6 @@ NUM_CLASSES = 6
 
 
 def set_determinism():
-    """Deterministic GPU settings. Some U-Net backward kernels (e.g. nearest upsampling) have no
-    deterministic CUDA implementation; they only warn, and the residual run-to-run noise is
-    measured by hpo.benchmark and hpo.final_test (re-evaluation of the stored best settings)."""
     import os
     os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
     torch.backends.cudnn.benchmark = False
@@ -40,7 +36,6 @@ _STD = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1)*255
 
 
 class GPUData:
-    """Whole dataset kept on the GPU as uint8 (Potsdam patches: ~0.9 GB)."""
 
     def __init__(self, images: np.ndarray, labels: np.ndarray, device: str = "cuda"):
         self.device = torch.device(device)
@@ -99,7 +94,6 @@ def scores(cm):
 
 @torch.no_grad()
 def predict_logits(model, data: GPUData, idx, flips=("id",), batch=16):
-    """Logits for full patches (padded to a multiple of 32, then cropped back)."""
     model.eval()
     outs = {f: [] for f in flips}
     h, w = data.x.shape[-2:]
@@ -123,7 +117,6 @@ def evaluate_model(model, data: GPUData, idx):
 
 
 def train(hp: dict, data: GPUData, train_idx, epochs: int, seed: int, crop: int = 256):
-    """Fine-tune a fresh pretrained U-Net with hyperparameters hp. Returns the model."""
     import random
     random.seed(seed)
     np.random.seed(seed % 2**32)
@@ -176,7 +169,6 @@ def train(hp: dict, data: GPUData, train_idx, epochs: int, seed: int, crop: int 
 
 
 class FinetuneObjective:
-    """x -> 1 - validation mIoU after a short fine-tuning run (fixed training seed per HPO run)."""
 
     def __init__(self, data: GPUData, train_idx, val_idx, epochs: int, decode, seed: int):
         self.data, self.train_idx, self.val_idx = data, train_idx, val_idx
@@ -197,7 +189,6 @@ class FinetuneObjective:
 
 
 class PostprocObjective:
-    """x -> 1 - validation mIoU of a fixed model after class-bias + flip-TTA post-processing."""
 
     def __init__(self, logits: dict, labels, decode, chunk: int = 48):
         self.logits, self.labels, self.decode, self.chunk = logits, labels, decode, chunk
@@ -223,8 +214,6 @@ class PostprocObjective:
 
 
 def load_or_train_base(cfg, data: GPUData, idx, root):
-    """Post-processing experiment: one base model, trained once on the training set and stored
-    with a sidecar describing how it was made. Only validation scores are computed here."""
     import json
     path = root / cfg["base_model"]
     meta_path = path.with_suffix(".json")

@@ -1,36 +1,22 @@
-"""Run an HPO comparison (algorithms x seeds) for one experiment config.
-
-    python -m hpo.run_hpo --config configs/hpo_finetune.json
-    python -m hpo.run_hpo --config configs/hpo_postproc.json
-    python -m hpo.run_hpo --config configs/hpo_finetune.json --dry-run   # no GPU, synthetic objective
-
-Protocol:
-- Searches see ONLY the training and validation sets. The test set is evaluated once, after all
-  runs, by `python -m hpo.final_test` (never inside a run).
-- The data split is created once and stored in data/split.json; every later call reuses it.
-- Every result carries an experiment fingerprint (config, algorithm settings, all code, split and
-  data files). Resuming refuses to mix results whose fingerprint or settings differ.
-- GPU runs use deterministic settings (see hpo.segmentation.set_determinism).
-"""
 from __future__ import annotations
 
 import os
 
-os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")  # must precede the first CUDA/cuBLAS call
+os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
 
-import argparse  # noqa: E402
-import hashlib  # noqa: E402
-import json  # noqa: E402
-import platform  # noqa: E402
-import sys  # noqa: E402
-import time  # noqa: E402
-from pathlib import Path  # noqa: E402
+import argparse
+import hashlib
+import json
+import platform
+import sys
+import time
+from pathlib import Path
 
-import numpy as np  # noqa: E402
+import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from hpo.common import DECODERS, DIMENSIONS, HPOEvaluator, run_algorithm  # noqa: E402
+from hpo.common import DECODERS, DIMENSIONS, HPOEvaluator, run_algorithm
 
 
 def sha_bytes(b: bytes) -> str:
@@ -42,7 +28,6 @@ def sha_file(path) -> str:
 
 
 def data_digest(data_dir: Path) -> str:
-    """Hash of every image/label file (names + contents)."""
     h = hashlib.sha256()
     for p in sorted(data_dir.rglob("*.tif")):
         h.update(p.relative_to(data_dir).as_posix().encode())
@@ -71,9 +56,6 @@ def atomic_write(path: Path, payload: dict):
 
 
 def get_split(cfg, names):
-    """Create the split file once (fixed seed); afterwards always reuse it unchanged.
-    cfg["split"] = {"tiles": [train, val, test]}: whole source tiles per subset (hpo.data.tile_split);
-    a list of fractions gives the earlier random patch-level split."""
     from hpo.data import split, tile_split
     path = ROOT / cfg["split_file"]
     if not path.exists():
@@ -97,13 +79,12 @@ def get_split(cfg, names):
 
 
 def class_shares(labels, idx):
-    """Share of each class among labelled pixels per subset; every class must occur in every subset."""
     from hpo.data import IGNORE
     from hpo.segmentation import NUM_CLASSES
     out = {}
     for k in ("train", "val", "test"):
         n = np.zeros(IGNORE + 1, np.int64)
-        for i in idx[k]:  # per patch, to keep memory small
+        for i in idx[k]:
             n += np.bincount(labels[i].ravel(), minlength=IGNORE + 1)
         n = n[:NUM_CLASSES]
         if (n == 0).any():
@@ -113,7 +94,6 @@ def class_shares(labels, idx):
 
 
 class SyntheticObjective:
-    """--dry-run: cheap stand-in with a known optimum, to test the pipeline without a GPU."""
 
     def __init__(self, dim):
         self.c = np.linspace(-40, 40, dim)
@@ -125,7 +105,6 @@ class SyntheticObjective:
 
 
 def build_experiment(cfg, dry_run):
-    """Returns (make_objective(seed), info, split_hash, data_hash). No test-set access here."""
     exp, decode = cfg["experiment"], DECODERS[cfg["experiment"]]
     if dry_run:
         return (lambda seed: SyntheticObjective(DIMENSIONS[exp])), {"dry_run": True}, None, None
@@ -147,7 +126,6 @@ def build_experiment(cfg, dry_run):
     if exp == "finetune":
         return (lambda seed: seg.FinetuneObjective(data, idx["train"], idx["val"], cfg["epochs"], decode, seed)), \
             info, split_hash, data_hash
-    # postproc: one base model trained once; only validation logits are cached for the search
     model, base_info = seg.load_or_train_base(cfg, data, idx, ROOT)
     info["base_model"] = base_info
     print(f"base model: val mIoU {base_info['val']['miou']:.4f}", flush=True)
@@ -181,7 +159,7 @@ def main():
     budget = cfg["budget"] if not args.dry_run else cfg.get("dry_run_budget", cfg["budget"])
     all_algos = load_algorithms(cfg)
     algos = [a for a in all_algos if not args.only or a["name"] in args.only.split(",")]
-    tasks = [(a, s) for s in cfg["seeds"] for a in algos]  # seed-major: every algorithm gets seed 0 first
+    tasks = [(a, s) for s in cfg["seeds"] for a in algos]
     if args.reverse:
         tasks.reverse()
     make_objective, info, split_hash, data_hash = build_experiment(cfg, args.dry_run)

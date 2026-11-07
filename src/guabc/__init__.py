@@ -1,7 +1,5 @@
-"""SHE-ABC (code name eshaguabc_v6), its development versions and the baselines of the paper."""
-
 from .cec2022 import CEC2022Function, official_checkpoints
-from .optimizers import OPTIMIZERS  # registers eshaguabc_v1; must precede .eshaguabc
+from .optimizers import OPTIMIZERS
 from .eshaguabc import ESHAGUABC
 from .eshaguabc_v2 import ESHAGUABC2
 from .eshaguabc_v3 import ESHAGUABC3

@@ -1,7 +1,7 @@
 # SHE-ABC
 
 Code for the paper *SHE-ABC: an ensemble artificial bee colony with fast early progress, evaluated on benchmark
-suites and segmentation hyperparameter tuning* (Z. Yıldırım).
+suites and segmentation hyperparameter tuning* (Z. Yıldırım, A. Durmuş).
 
 SHE-ABC (success-history ensemble ABC) is an artificial bee colony in which every bee draws its move from an adaptive
 ensemble of an ABC move and two differential-evolution moves, with success-history parameter adaptation and a
